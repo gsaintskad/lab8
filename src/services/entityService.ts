@@ -16,7 +16,6 @@ export async function generateCertificateRequest(): Promise<void> {
 
     if (!fs.existsSync(config.ENTITY_KEY_FILE)) {
         console.log(`\nGenerating private key for entity (${config.ENTITY_KEY_FILE_NAME})...`);
-        // For simplicity, the entity key is not password-protected in this example.
         runOpenSSLCommand(`genpkey -algorithm RSA -out "${config.ENTITY_KEY_FILE}"`);
     } else {
         console.log(`Entity private key (${path.basename(config.ENTITY_KEY_FILE_NAME)}) already exists.`);
@@ -42,16 +41,15 @@ export async function issueCertificate(): Promise<void> {
 
     if (!fs.existsSync(config.CA_CERT_FILE) || !fs.existsSync(config.CA_KEY_FILE)) {
         console.error(`Error: CA files (${path.basename(config.CA_CERT_FILE_NAME)}, ${path.basename(config.CA_KEY_FILE_NAME)}) not found. Run Step 1 (CA creation) first.`);
-        return; // Or throw an error
+        return; 
     }
     if (!fs.existsSync(config.ENTITY_CSR_FILE)) {
         console.error(`Error: CSR file (${path.basename(config.ENTITY_CSR_FILE_NAME)}) not found. Run Step 2 (CSR generation) first.`);
-        return; // Or throw an error
+        return; 
     }
 
     console.log(`\nSigning CSR using CA to issue certificate (${config.ENTITY_CERT_FILE_NAME})...`);
-    // The -CAcreateserial option will create the .srl file (e.g., ca.srl) if it doesn't exist, to track serial numbers.
-    runOpenSSLCommand(
+     runOpenSSLCommand(
         `x509 -req -in "${config.ENTITY_CSR_FILE}" -CA "${config.CA_CERT_FILE}" -CAkey "${config.CA_KEY_FILE}" ` +
         `-CAserial "${config.CA_SERIAL_FILE}" -CAcreateserial -out "${config.ENTITY_CERT_FILE}" -days ${config.ENTITY_CERT_DAYS} -sha256 ` +
         `-passin pass:${config.CA_KEY_PASSWORD}`
@@ -61,7 +59,6 @@ export async function issueCertificate(): Promise<void> {
     console.log(`   Entity Certificate: ${config.ENTITY_CERT_FILE}`);
     console.log(`   CA Serial File (created/used): ${config.CA_SERIAL_FILE}`);
 
-    // Verify the issued certificate (good practice)
     console.log("\nVerifying issued certificate against CA...");
     runOpenSSLCommand(`verify -CAfile "${config.CA_CERT_FILE}" "${config.ENTITY_CERT_FILE}"`);
 }
